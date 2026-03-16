@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心动盲盒</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: "微软雅黑";
+            background: linear-gradient(135deg, #ff9aaf, #ffc3d8, #ffd6e7);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 15px 40px rgba(255, 90, 140, 0.3);
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+        }
+        .title {
+            font-size: 36px;
+            color: #ff3a80;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .sub-title {
+            color: #ff6a9d;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .rule-box {
+            background: #fff5f9;
+            padding: 20px;
+            border-radius: 16px;
+            text-align: left;
+            margin-bottom: 30px;
+            border: 1px solid #ffd6e7;
+        }
+        .rule-box p {
+            color: #ff3a80;
+            font-size: 15px;
+            margin: 8px 0;
+        }
+        .btn {
+            width: 100%;
+            padding: 18px;
+            margin: 10px 0;
+            background: linear-gradient(90deg, #ff3a80, #ff6a9d);
+            color: #fff;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .btn-luck {
+            background: linear-gradient(90deg, #ff2e7a, #ff5a8c);
+        }
+        .form {
+            display: none;
+            margin-top: 20px;
+            text-align: left;
+        }
+        input, select {
+            width: 100%;
+            padding: 14px;
+            margin: 8px 0;
+            border: 1px solid #ffd6e7;
+            border-radius: 12px;
+            background: #fff5f9;
+        }
+        .tip {
+            color: #ff3a80;
+            font-size: 13px;
+            display: none;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #fff0f6;
+            border-radius: 16px;
+            color: #ff3a80;
+            font-weight: bold;
+            line-height: 1.8;
+            display: none;
+        }
+        .heart {
+            position: fixed;
+            pointer-events: none;
+            animation: fall 3s linear forwards;
+            z-index: 999;
+        }
+        @keyframes fall {
+            0% { transform: translateY(-10vh); opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        .pay-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .pay-box {
+            background: #fff;
+            padding: 25px 30px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            max-width: 360px;
+        }
+        .pay-title {
+            font-size: 20px;
+            color: #ff3a80;
+        }
+        .pay-price {
+            font-size: 28px;
+            color: #ff3a80;
+            font-weight: bold;
+        }
+        .pay-buttons {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+        .pay-buttons .btn {
+            padding: 12px 16px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="title">❤️ 心动盲盒 ❤️</div>
+    <div class="sub-title">船校 × 辽财 × 辽工大</div>
+
+    <div class="rule-box">
+        <p>🔹 女生投稿：免费</p >
+        <p>🔹 男生投稿：1 元</p >
+        <p>🔹 抽取盲盒：2 元</p >
+        <p>🔹 仅限三校同学参与</p >
+    </div>
+
+    <button class="btn" onclick="playClick();openForm('girl')">👧 女生投稿</button>
+    <button class="btn" onclick="playClick();openPay('boy')">👦 男生投稿</button>
+    <button class="btn btn-luck" onclick="playClick();openPay('luck')">🎁 抽取盲盒</button>
+
+    <div class="form" id="form">
+        <select id="gender">
+            <option value="">选择性别</option>
+            <option value="girl">女生</option>
+            <option value="boy">男生</option>
+        </select>
+        <select id="school">
+            <option value="">选择学校</option>
+            <option value="船校">船校</option>
+            <option value="辽财">辽财</option>
+            <option value="辽工大">辽工大</option>
+        </select>
+        <input id="grade" placeholder="年级">
+        <input id="name" placeholder="昵称">
+        <input id="hobby" placeholder="兴趣爱好">
+        <div class="tip" id="tip">请填写完整信息</div>
+        <button class="btn" onclick="playClick();submit()">提交</button>
+    </div>
+
+    <div class="result" id="result"></div>
+</div>
+
+<div class="pay-modal" id="payModal">
+    <div class="pay-box">
+        <div class="pay-title">支付</div>
+        <div class="pay-price" id="payPrice">¥0</div>
+        <div class="pay-buttons">
+            <button class="btn" onclick="playClick();payOk()">确认</button>
+            <button class="btn" onclick="playClick();closePay()">取消</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============= 背景音乐 =============
+const bgAudio = new Audio("https://objects.akamaized.net/media/preview/706/706306_1174551-lq.mp3");
+bgAudio.loop = true;
+bgAudio.volume = 0.3;
+
+// 点击页面就播放（必响）
+document.addEventListener("click", () => {
+    bgAudio.play().catch(e => {});
+});
+
+// ============= 点击音效 =============
+function playClick(){
+    let a = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YnoGAACBhYqFbF1fdKI2NymAQocXaE2WlJwfZ5yJnJqa");
+    a.volume=0.7;
+    a.play().catch(()=>{});
+}
+
+// ============= 心动音效 =============
+function playHeart(){
+    let a = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT19AAAAA//7//P/+//z/8P7/8P7/");
+    a.volume=0.8;
+    a.play().catch(()=>{});
+}
+
+let currentType="";
+let payTarget="";
+
+function openForm(t){
+    currentType=t;
+    form.style.display="block";
+    result.style.display="none";
+}
+
+function openPay(t){
+    payTarget=t;
+    payPrice.innerText = t=="boy"?"¥1":"¥2";
+    payModal.style.display="flex";
+}
+
+function closePay(){
+    payModal.style.display="none";
+}
+
+function payOk(){
+    closePay();
+    payTarget=="boy"?openForm("boy"):openLuck();
+}
+
+function submit(){
+    const g=gender.value, s=school.value, gr=grade.value, n=name.value, h=hobby.value;
+    if(!g||!s||!gr||!n||!h){tip.style.display="block";return;}
+    let list=JSON.parse(localStorage.getItem("users"))||[];
+    list.push({g,s,gr,n,h});
+    localStorage.setItem("users",JSON.stringify(list));
+    result.innerText=`✅ 投稿成功！\n学校：${s}\n昵称：${n}`;
+    result.style.display="block";
+    form.style.display="none";
+}
+
+function openLuck(){
+    playHeart();
+    let list=JSON.parse(localStorage.getItem("users"))||[];
+    if(list.length<2){alert("目前参与人数较少");return;}
+    let user=list[Math.floor(Math.random()*list.length)];
+    result.innerText=`🎊 匹配成功！\n对象：${user.n}\n学校：${user.s}\n爱好：${user.h}`;
+    result.style.display="block";
+    dropHearts(40);
+}
+
+function dropHearts(c){
+    for(let i=0;i<c;i++){
+        let h=document.createElement("div");
+        h.className="heart";
+        h.innerText=["❤️","💖","💗","💓","💕"][Math.floor(Math.random()*5)];
+        h.style.left=Math.random()*100+"vw";
+        h.style.fontSize=18+Math.random()*22+"px";
+        document.body.appendChild(h);
+        setTimeout(()=>h.remove(),4000);
+    }
+}
+</script>
+</body>
+</html>
