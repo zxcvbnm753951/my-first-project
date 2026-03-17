@@ -44,21 +44,22 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
   text-align: center;
 }
 
-/* 只改这里：页面内直接显示支付区，不弹窗 */
-.pay-here{
-  margin:12px 0;
-  padding:16px;
-  background:#fef5f8;
-  border-radius:16px;
-  text-align:center;
+/* 强化支付区域：默认隐藏，必须点过才显示 */
+.pay-block {
+  display: none;
+  text-align: center;
+  padding: 15px;
+  background: #fdf0f5;
+  border-radius: 16px;
+  margin: 12px 0;
+  border: 1px solid #f8ccd9;
 }
-.pay-hide{
-  display:none;
-}
-.pay-img{
-  width:180px;height:180px;
-  margin:10px auto;
-  border-radius:12px;
+.pay-block img {
+  width: 220px;
+  height: 220px;
+  border-radius: 14px;
+  margin: 10px auto;
+  border: 2px solid #ffc0d5;
 }
 </style>
 </head>
@@ -124,15 +125,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <input id="wx" placeholder="微信/QQ">
 <textarea id="intro" rows="5" placeholder="介绍一下自己~"></textarea>
 
-<!-- 页面内直接显示支付码，不弹窗 -->
-<div id="postPayArea" class="pay-here pay-hide">
-  <p>请长按二维码支付 1 元</p >
-  < img src="pay.jpg" class="pay-img">
-  <p>支付完成后点确认</p >
-  <button class="btn" onclick="realSubmitPost()">✅ 已支付，确认提交</button>
+<!-- 支付区域：必须显示才能提交 -->
+<div class="pay-block" id="postPay">
+  <p style="color:#ff5c8d; font-weight:bold;">请长按二维码支付 1 元</p >
+  < img src="pay.jpg">
+  <p>支付完成后点击下方确认按钮</p >
+  <button class="btn" onclick="finalSubmitPost()">✅ 确认已支付，提交投稿</button>
 </div>
 
-<button class="btn" onclick="checkBeforePost()">提交投稿</button>
+<button class="btn" onclick="preparePost()">提交投稿</button>
 </div>
 </div>
 
@@ -153,15 +154,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 请先选择性别再抽取
 </div>
 
-<!-- 页面内直接显示支付码，不弹窗 -->
-<div id="drawPayArea" class="pay-here pay-hide">
-  <p>请长按二维码支付 2 元</p >
-  < img src="pay.jpg" class="pay-img">
-  <p>支付完成后点确认</p >
-  <button class="btn btn-green" onclick="realDraw()">✅ 已支付，开始抽盲盒</button>
+<!-- 支付区域：必须显示才能抽奖 -->
+<div class="pay-block" id="drawPay">
+  <p style="color:#ff5c8d; font-weight:bold;">请长按二维码支付 2 元</p >
+  < img src="pay.jpg">
+  <p>支付完成后点击下方确认按钮</p >
+  <button class="btn btn-green" onclick="finalDraw()">✅ 确认已支付，开始抽盲盒</button>
 </div>
 
-<button class="btn btn-green" onclick="checkBeforeDraw()">💸 支付 2 元 抽盲盒</button>
+<button class="btn btn-green" onclick="prepareDraw()">💸 支付 2 元 抽盲盒</button>
 </div>
 
 <div class="card">
@@ -243,57 +244,78 @@ function goPanel(id) {
 let boxList = JSON.parse(localStorage.getItem('boxList')) || [];
 let girlPostCount = parseInt(localStorage.getItem('girlPostCount') || 0);
 
-// 昵称过滤 + 性别识别
+// 昵称校验 + 性别识别
 function checkNickAndGetGender(nick) {
   if (!nick || nick.length < 2 || nick.length > 12)
-    return { ok: false, msg: "昵称2-12字" };
+    return { ok: false, msg: "昵称必须2-12个字" };
   const clean = nick.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').trim();
   if (clean.length < 2)
-    return { ok: false, msg: "禁止恶搞/乱码昵称" };
-  if (/男|哥|帅|君|宇|杰/.test(nick)) return { ok: true, gender: 'boy' };
-  if (/女|妹|宝|甜|雪|琳|欣|婷/.test(nick)) return { ok: true, gender: 'girl' };
-  return { ok: false, msg: "请手动选择性别" };
+    return { ok: false, msg: "禁止恶搞、乱码、纯符号昵称" };
+  if (/男|哥|帅|君|宇|杰|强|龙/.test(nick)) return { ok: true, gender: 'boy' };
+  if (/女|妹|宝|甜|雪|琳|欣|婷|朵/.test(nick)) return { ok: true, gender: 'girl' };
+  return { ok: false, msg: "系统无法识别性别，请手动选择" };
 }
 
-// 投稿前检查，只显示支付区，不弹窗
-function checkBeforePost() {
+// ==============================================
+// 投稿：强化验证 —— 必须先显示支付码，才能提交
+// ==============================================
+function preparePost() {
   let gender = document.getElementById("post_gender").value;
   let nick = document.getElementById("nick").value.trim();
   let age = document.getElementById("age").value.trim();
   let wx = document.getElementById("wx").value.trim();
   let intro = document.getElementById("intro").value.trim();
 
-  if (!nick || !age || !wx || !intro) return alert("请填完整");
-  if (isNaN(age) || age < 10 || age > 60) return alert("年龄不正确");
+  if (!nick || !age || !wx || !intro) return alert("请填写完整信息");
+  if (isNaN(age) || age < 10 || age > 60) return alert("年龄格式不正确");
 
+  // 自动识别性别
   if (!gender) {
-    let chk = checkNickAndGetGender(nick);
-    if (!chk.ok) return alert(chk.msg);
-    gender = chk.gender;
+    const res = checkNickAndGetGender(nick);
+    if (!res.ok) return alert(res.msg);
+    gender = res.gender;
     document.getElementById("post_gender").value = gender;
   }
 
   // 女生首次免费
   if (gender === 'girl' && girlPostCount === 0) {
-    realSubmitPost();
+    const data = {
+      gender,
+      type: document.getElementById("post_type").value,
+      nick, age, wx, intro, time: Date.now()
+    };
+    boxList.push(data);
+    localStorage.setItem('boxList', JSON.stringify(boxList));
+    girlPostCount = 1;
+    localStorage.setItem("girlPostCount", 1);
+    alert("女生首次投稿免费！提交成功！");
+    updateBoxCount();
     return;
   }
 
-  // 显示支付区
-  document.getElementById("postPayArea").classList.remove("pay-hide");
+  // 显示支付区域（不显示就无法提交）
+  document.getElementById("postPay").style.display = "block";
+  alert("请完成支付后，点击【确认已支付】按钮");
 }
 
-// 真正提交投稿
-function realSubmitPost() {
-  playClick();
-  let gender = document.getElementById("post_gender").value;
-  let type = document.getElementById("post_type").value;
-  let nick = document.getElementById("nick").value.trim();
-  let age = document.getElementById("age").value.trim();
-  let wx = document.getElementById("wx").value.trim();
-  let intro = document.getElementById("intro").value.trim();
+// 最终提交：只有支付区域显示时才有效
+function finalSubmitPost() {
+  if (document.getElementById("postPay").style.display !== "block") {
+    return alert("请先点击提交投稿，显示付款码");
+  }
 
-  boxList.push({ gender, type, nick, age, wx, intro, time: Date.now() });
+  const gender = document.getElementById("post_gender").value;
+  const data = {
+    gender,
+    type: document.getElementById("post_type").value,
+    nick: document.getElementById("nick").value.trim(),
+    age: document.getElementById("age").value.trim(),
+    wx: document.getElementById("wx").value.trim(),
+    intro: document.getElementById("intro").value.trim(),
+    time: Date.now()
+  };
+
+  boxList.push(data);
   localStorage.setItem('boxList', JSON.stringify(boxList));
 
   if (gender === 'girl') {
@@ -302,31 +324,44 @@ function realSubmitPost() {
   }
 
   alert("投稿成功！");
-  document.getElementById("postPayArea").classList.add("pay-hide");
+  document.getElementById("postPay").style.display = "none";
   updateBoxCount();
 }
 
-// 抽盲盒前检查
-function checkBeforeDraw() {
-  let myGender = document.getElementById('draw_gender').value;
-  let target = myGender === 'girl' ? 'boy' : 'girl';
-  let list = boxList.filter(o => o.gender === target);
+// ==============================================
+// 抽盲盒：强化验证 —— 必须显示支付码才能抽
+// ==============================================
+function prepareDraw() {
+  const myGender = document.getElementById('draw_gender').value;
+  const target = myGender === 'girl' ? 'boy' : 'girl';
+  const list = boxList.filter(o => o.gender === target);
+
   if (list.length === 0) {
     document.getElementById('box_result').innerText = "暂无对应盲盒";
     return;
   }
-  document.getElementById("drawPayArea").classList.remove("pay-hide");
+
+  // 显示支付区域
+  document.getElementById("drawPay").style.display = "block";
+  alert("请完成支付后，点击【确认已支付】按钮");
 }
 
-// 真正抽盲盒
-function realDraw() {
-  playClick();
-  let myGender = document.getElementById('draw_gender').value;
-  let target = myGender === 'girl' ? 'boy' : 'girl';
-  let list = boxList.filter(o => o.gender === target);
-  if (list.length === 0) return;
+// 最终抽奖：只有支付区域显示才执行
+function finalDraw() {
+  if (document.getElementById("drawPay").style.display !== "block") {
+    return alert("请先点击抽盲盒，显示付款码");
+  }
 
-  let item = list[Math.floor(Math.random() * list.length)];
+  const myGender = document.getElementById('draw_gender').value;
+  const target = myGender === 'girl' ? 'boy' : 'girl';
+  const list = boxList.filter(o => o.gender === target);
+
+  if (list.length === 0) {
+    document.getElementById('box_result').innerText = "暂无对应盲盒";
+    return;
+  }
+
+  const item = list[Math.floor(Math.random() * list.length)];
   document.getElementById('box_result').innerText =
 `【${item.type}】
 昵称：${item.nick}
@@ -334,23 +369,18 @@ function realDraw() {
 介绍：${item.intro}
 联系方式：${item.wx}`;
 
-  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
+  const mine = JSON.parse(localStorage.getItem('myBox')) || [];
   mine.push(item);
   localStorage.setItem('myBox', JSON.stringify(mine));
-  createHearts(20);
-  document.getElementById("drawPayArea").classList.add("pay-hide");
-}
 
-function saveBox(data) {
-  boxList.push(data);
-  localStorage.setItem('boxList', JSON.stringify(boxList));
-  updateBoxCount();
+  createHearts(20);
+  document.getElementById("drawPay").style.display = "none";
 }
 
 function updateBoxCount() {
-  let myGender = document.getElementById('draw_gender')?.value || 'girl';
-  let target = myGender === 'girl' ? 'boy' : 'girl';
-  let cnt = boxList.filter(o => o.gender === target).length;
+  const myGender = document.getElementById('draw_gender')?.value || 'girl';
+  const target = myGender === 'girl' ? 'boy' : 'girl';
+  const cnt = boxList.filter(o => o.gender === target).length;
   if (document.getElementById('boxCountText')) {
     document.getElementById('boxCountText').innerText =
       `当前可抽取${target=='boy'?'男生':'女生'}盲盒：${cnt} 个`;
@@ -358,11 +388,11 @@ function updateBoxCount() {
 }
 
 function loadMyStore() {
-  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
+  const mine = JSON.parse(localStorage.getItem('myBox')) || [];
   let html = '';
   mine.forEach(m => {
     html += `<div class="box-item">
-【${m.type}】昵称：${m.nick}｜${m.age}岁
+【${m.type}】${m.nick}｜${m.age}岁
 介绍：${m.intro}
 微信：${m.wx}
 </div>`;
@@ -372,14 +402,14 @@ function loadMyStore() {
 }
 
 function createHearts(num) {
-  for (let i=0; i<num; i++) {
-    let h = document.createElement('div');
+  for (let i = 0; i < num; i++) {
+    const h = document.createElement('div');
     h.innerText = '❤️';
     h.className = 'heart';
-    h.style.left = Math.random()*100+'vw';
-    h.style.fontSize = Math.random()*12+10+'px';
+    h.style.left = Math.random()*100 + 'vw';
+    h.style.fontSize = Math.random()*12 + 10 + 'px';
     document.body.appendChild(h);
-    setTimeout(()=>h.remove(), 2200);
+    setTimeout(() => h.remove(), 2200);
   }
 }
 
