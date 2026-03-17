@@ -146,7 +146,6 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 </select>
 <div class="box-count" id="boxCountText">当前可抽取盲盒：0 个</div>
 
-<!-- 刷新按钮 -->
 <button class="btn" onclick="updateBoxCount()" style="background:#66a3ff;">🔄 刷新盲盒列表</button>
 </div>
 
@@ -259,7 +258,6 @@ function checkNickAndGetGender(nick) {
   return { ok: false, msg: "系统无法识别性别，请手动选择" };
 }
 
-// 投稿前验证
 function preparePost() {
   let gender = document.getElementById("post_gender").value;
   let nick = document.getElementById("nick").value.trim();
@@ -292,7 +290,6 @@ function preparePost() {
   document.getElementById("postPay").style.display = "block";
 }
 
-// 最终投稿：必须显示支付码才能提交
 function finalSubmitPost() {
   if (document.getElementById("postPay").style.display !== "block") {
     return alert("请先点击提交投稿，显示付款码");
@@ -323,7 +320,6 @@ function finalSubmitPost() {
   updateBoxCount();
 }
 
-// 抽盲盒前验证
 function prepareDraw() {
   const myGender = document.getElementById('draw_gender').value;
   const target = myGender === 'girl' ? 'boy' : 'girl';
@@ -338,7 +334,6 @@ function prepareDraw() {
   document.getElementById("drawPay").style.display = "block";
 }
 
-// 最终抽卡：必须显示支付码才能抽
 function finalDraw() {
   if (document.getElementById("drawPay").style.display !== "block") {
     return alert("请先点击支付2元抽盲盒，显示付款码");
@@ -369,7 +364,6 @@ function finalDraw() {
   document.getElementById("drawPay").style.display = "none";
 }
 
-// 实时同步刷新盲盒数量
 function updateBoxCount() {
   const myGender = document.getElementById('draw_gender')?.value || 'girl';
   const target = myGender === 'girl' ? 'boy' : 'girl';
