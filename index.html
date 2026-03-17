@@ -44,47 +44,21 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
   text-align: center;
 }
 
-.pay-modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
+/* 只改这里：页面内直接显示支付区，不弹窗 */
+.pay-here{
+  margin:12px 0;
+  padding:16px;
+  background:#fef5f8;
+  border-radius:16px;
+  text-align:center;
 }
-.pay-box {
-  background: white;
-  width: 90%;
-  max-width: 360px;
-  border-radius: 20px;
-  padding: 25px;
-  text-align: center;
-  box-shadow: 0 8px 25px rgba(255,102,153,0.15);
+.pay-hide{
+  display:none;
 }
-.pay-box h3 {
-  color: #ff5c8d;
-  margin-bottom: 15px;
-  font-size: 20px;
-}
-.pay-img {
-  width: 220px;
-  height: 220px;
-  margin: 15px auto;
-  border-radius: 12px;
-  border: 2px solid #ffd1e1;
-  display: block;
-}
-.pay-tip {
-  color: #666;
-  margin: 10px 0;
-  font-size: 15px;
-}
-.hide {
-  display: none;
+.pay-img{
+  width:180px;height:180px;
+  margin:10px auto;
+  border-radius:12px;
 }
 </style>
 </head>
@@ -150,7 +124,15 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <input id="wx" placeholder="微信/QQ">
 <textarea id="intro" rows="5" placeholder="介绍一下自己~"></textarea>
 
-<button class="btn" onclick="submitPost()">提交投稿</button>
+<!-- 页面内直接显示支付码，不弹窗 -->
+<div id="postPayArea" class="pay-here pay-hide">
+  <p>请长按二维码支付 1 元</p >
+  < img src="pay.jpg" class="pay-img">
+  <p>支付完成后点确认</p >
+  <button class="btn" onclick="realSubmitPost()">✅ 已支付，确认提交</button>
+</div>
+
+<button class="btn" onclick="checkBeforePost()">提交投稿</button>
 </div>
 </div>
 
@@ -170,7 +152,16 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <div id="box_result" style="min-height:140px;text-align:center;padding:30px 0;color:#333;font-size:16px;line-height:1.7;white-space:pre-line">
 请先选择性别再抽取
 </div>
-<button class="btn btn-green" onclick="payThenDraw()">💸 支付 2 元 抽盲盒</button>
+
+<!-- 页面内直接显示支付码，不弹窗 -->
+<div id="drawPayArea" class="pay-here pay-hide">
+  <p>请长按二维码支付 2 元</p >
+  < img src="pay.jpg" class="pay-img">
+  <p>支付完成后点确认</p >
+  <button class="btn btn-green" onclick="realDraw()">✅ 已支付，开始抽盲盒</button>
+</div>
+
+<button class="btn btn-green" onclick="checkBeforeDraw()">💸 支付 2 元 抽盲盒</button>
 </div>
 
 <div class="card">
@@ -203,17 +194,6 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 </div>
 </div>
 
-<!-- 支付弹窗 -->
-<div class="pay-modal hide" id="payModal">
-  <div class="pay-box">
-    <h3>💌 请扫码支付</h3>
-    <p class="pay-tip" id="payTip">支付 1 元</p >
-    < img src="pay.jpg" class="pay-img" alt="微信收款码">
-    <p class="pay-tip">💖 支付完成后点击下方按钮</p >
-    <button class="btn" onclick="confirmPay()">✅ 已支付，确认</button>
-  </div>
-</div>
-
 <audio id="bgMusic" loop>
 <audio id="clickSound">
 
@@ -229,7 +209,6 @@ bgMusic.volume = 0.3;
 clickSound.volume = 0.7;
 
 let musicOn = true;
-let currentAction = '';
 
 function playClick() {
   clickSound.currentTime = 0;
@@ -264,33 +243,48 @@ function goPanel(id) {
 let boxList = JSON.parse(localStorage.getItem('boxList')) || [];
 let girlPostCount = parseInt(localStorage.getItem('girlPostCount') || 0);
 
-// ==============================================
-// 昵称过滤 + 性别自动识别（核心新增）
-// ==============================================
+// 昵称过滤 + 性别识别
 function checkNickAndGetGender(nick) {
-  if (!nick || nick.length < 2 || nick.length > 12) {
-    return { ok: false, msg: "昵称长度在2-12字之间" };
-  }
-
-  // 屏蔽恶搞/乱码/敏感
-  const bad = /[^\u4e00-\u9fa5a-zA-Z0-9]/g;
-  const clean = nick.replace(bad, '').trim();
-  if (clean.length < 2) {
-    return { ok: false, msg: "昵称不能是符号、乱码或恶搞" };
-  }
-
-  // 性别识别
-  const boyWords = /男|哥|先生|仔|帅|君|弟|浩|宇|杰/;
-  const girlWords = /女|妹|姐|宝|甜|雪|琳|欣|婷|朵|菲/;
-
-  if (boyWords.test(nick)) return { ok: true, gender: 'boy' };
-  if (girlWords.test(nick)) return { ok: true, gender: 'girl' };
-
-  return { ok: false, msg: "系统无法识别性别，请手动选择" };
+  if (!nick || nick.length < 2 || nick.length > 12)
+    return { ok: false, msg: "昵称2-12字" };
+  const clean = nick.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '').trim();
+  if (clean.length < 2)
+    return { ok: false, msg: "禁止恶搞/乱码昵称" };
+  if (/男|哥|帅|君|宇|杰/.test(nick)) return { ok: true, gender: 'boy' };
+  if (/女|妹|宝|甜|雪|琳|欣|婷/.test(nick)) return { ok: true, gender: 'girl' };
+  return { ok: false, msg: "请手动选择性别" };
 }
 
-// 投稿提交
-function submitPost() {
+// 投稿前检查，只显示支付区，不弹窗
+function checkBeforePost() {
+  let gender = document.getElementById("post_gender").value;
+  let nick = document.getElementById("nick").value.trim();
+  let age = document.getElementById("age").value.trim();
+  let wx = document.getElementById("wx").value.trim();
+  let intro = document.getElementById("intro").value.trim();
+
+  if (!nick || !age || !wx || !intro) return alert("请填完整");
+  if (isNaN(age) || age < 10 || age > 60) return alert("年龄不正确");
+
+  if (!gender) {
+    let chk = checkNickAndGetGender(nick);
+    if (!chk.ok) return alert(chk.msg);
+    gender = chk.gender;
+    document.getElementById("post_gender").value = gender;
+  }
+
+  // 女生首次免费
+  if (gender === 'girl' && girlPostCount === 0) {
+    realSubmitPost();
+    return;
+  }
+
+  // 显示支付区
+  document.getElementById("postPayArea").classList.remove("pay-hide");
+}
+
+// 真正提交投稿
+function realSubmitPost() {
   playClick();
   let gender = document.getElementById("post_gender").value;
   let type = document.getElementById("post_type").value;
@@ -299,31 +293,52 @@ function submitPost() {
   let wx = document.getElementById("wx").value.trim();
   let intro = document.getElementById("intro").value.trim();
 
-  if (!nick || !age || !wx || !intro) return alert("请填写完整信息");
-  if (isNaN(age) || age < 10 || age > 60) return alert("年龄格式不正确");
+  boxList.push({ gender, type, nick, age, wx, intro, time: Date.now() });
+  localStorage.setItem('boxList', JSON.stringify(boxList));
 
-  // 昵称校验 + 自动识别性别
-  if (!gender) {
-    const check = checkNickAndGetGender(nick);
-    if (!check.ok) return alert(check.msg);
-    gender = check.gender;
+  if (gender === 'girl') {
+    girlPostCount++;
+    localStorage.setItem("girlPostCount", girlPostCount);
   }
 
-  let data = { gender, type, nick, age, wx, intro, time: Date.now() };
+  alert("投稿成功！");
+  document.getElementById("postPayArea").classList.add("pay-hide");
+  updateBoxCount();
+}
 
-  // 女生首次免费
-  if (gender === 'girl' && girlPostCount === 0) {
-    girlPostCount = 1;
-    localStorage.setItem("girlPostCount", 1);
-    saveBox(data);
-    alert("投稿成功！");
+// 抽盲盒前检查
+function checkBeforeDraw() {
+  let myGender = document.getElementById('draw_gender').value;
+  let target = myGender === 'girl' ? 'boy' : 'girl';
+  let list = boxList.filter(o => o.gender === target);
+  if (list.length === 0) {
+    document.getElementById('box_result').innerText = "暂无对应盲盒";
     return;
   }
+  document.getElementById("drawPayArea").classList.remove("pay-hide");
+}
 
-  // 支付
-  currentAction = 'post';
-  document.getElementById('payTip').innerText = '支付 1 元';
-  document.getElementById('payModal').classList.remove('hide');
+// 真正抽盲盒
+function realDraw() {
+  playClick();
+  let myGender = document.getElementById('draw_gender').value;
+  let target = myGender === 'girl' ? 'boy' : 'girl';
+  let list = boxList.filter(o => o.gender === target);
+  if (list.length === 0) return;
+
+  let item = list[Math.floor(Math.random() * list.length)];
+  document.getElementById('box_result').innerText =
+`【${item.type}】
+昵称：${item.nick}
+年龄：${item.age}
+介绍：${item.intro}
+联系方式：${item.wx}`;
+
+  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
+  mine.push(item);
+  localStorage.setItem('myBox', JSON.stringify(mine));
+  createHearts(20);
+  document.getElementById("drawPayArea").classList.add("pay-hide");
 }
 
 function saveBox(data) {
@@ -333,80 +348,13 @@ function saveBox(data) {
 }
 
 function updateBoxCount() {
-  let myGender = document.getElementById('draw_gender').value;
+  let myGender = document.getElementById('draw_gender')?.value || 'girl';
   let target = myGender === 'girl' ? 'boy' : 'girl';
-  let list = boxList.filter(o => o.gender === target);
-  document.getElementById('boxCountText').innerText =
-    `当前可抽取${target=='boy'?'男生':'女生'}盲盒：${list.length} 个`;
-}
-
-function payThenDraw() {
-  playClick();
-  let myGender = document.getElementById('draw_gender').value;
-  let target = myGender === 'girl' ? 'boy' : 'girl';
-  let list = boxList.filter(o => o.gender === target);
-  if (list.length === 0) {
-    document.getElementById('box_result').innerText = `暂无${target=='boy'?'男生':'女生'}盲盒`;
-    return;
+  let cnt = boxList.filter(o => o.gender === target).length;
+  if (document.getElementById('boxCountText')) {
+    document.getElementById('boxCountText').innerText =
+      `当前可抽取${target=='boy'?'男生':'女生'}盲盒：${cnt} 个`;
   }
-  currentAction = 'draw';
-  document.getElementById('payTip').innerText = '支付 2 元';
-  document.getElementById('payModal').classList.remove('hide');
-}
-
-function confirmPay() {
-  playClick();
-  document.getElementById('payModal').classList.add('hide');
-  if (currentAction === 'post') {
-    let gender = document.getElementById("post_gender").value;
-    let nick = document.getElementById("nick").value.trim();
-    if (!gender) {
-      const c = checkNickAndGetGender(nick);
-      if (!c.ok) return alert(c.msg);
-      gender = c.gender;
-    }
-    let data = {
-      gender,
-      type: document.getElementById("post_type").value,
-      nick: document.getElementById("nick").value.trim(),
-      age: document.getElementById("age").value.trim(),
-      wx: document.getElementById("wx").value.trim(),
-      intro: document.getElementById("intro").value.trim(),
-      time: Date.now()
-    };
-    saveBox(data);
-    if (gender === 'girl') {
-      girlPostCount += 1;
-      localStorage.setItem("girlPostCount", girlPostCount);
-    }
-    alert("投稿成功！");
-  }
-  if (currentAction === 'draw') {
-    startDraw();
-    createHearts(24);
-  }
-  currentAction = '';
-}
-
-function startDraw() {
-  playClick();
-  let myGender = document.getElementById('draw_gender').value;
-  let target = myGender === 'girl' ? 'boy' : 'girl';
-  let list = boxList.filter(o => o.gender === target);
-  if (list.length === 0) {
-    document.getElementById('box_result').innerText = `暂无${target=='boy'?'男生':'女生'}盲盒`;
-    return;
-  }
-  let item = list[Math.floor(Math.random() * list.length)];
-  let txt = `【${item.type}】
-昵称：${item.nick}
-年龄：${item.age}
-介绍：${item.intro}
-联系方式：${item.wx}`.trim();
-  document.getElementById('box_result').innerText = txt;
-  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
-  mine.push(item);
-  localStorage.setItem('myBox', JSON.stringify(mine));
 }
 
 function loadMyStore() {
@@ -414,8 +362,7 @@ function loadMyStore() {
   let html = '';
   mine.forEach(m => {
     html += `<div class="box-item">
-【${m.type}】
-昵称：${m.nick}｜${m.age}岁
+【${m.type}】昵称：${m.nick}｜${m.age}岁
 介绍：${m.intro}
 微信：${m.wx}
 </div>`;
