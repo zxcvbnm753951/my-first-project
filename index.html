@@ -37,12 +37,54 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 .agreement-box p{line-height:1.7;margin-bottom:10px;color:#333}
 .agreement-box .btn{margin-top:16px}
 
-/* 盲盒数量提示样式 */
 .box-count {
-  font-size:14px;
-  color:#ff6699;
-  margin-bottom:10px;
-  text-align:center;
+  font-size: 14px;
+  color: #ff6699;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.pay-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+.pay-box {
+  background: white;
+  width: 90%;
+  max-width: 360px;
+  border-radius: 20px;
+  padding: 25px;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(255,102,153,0.15);
+}
+.pay-box h3 {
+  color: #ff5c8d;
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+.pay-img {
+  width: 220px;
+  height: 220px;
+  margin: 15px auto;
+  border-radius: 12px;
+  border: 2px solid #ffd1e1;
+  display: block;
+}
+.pay-tip {
+  color: #666;
+  margin: 10px 0;
+  font-size: 15px;
+}
+.hide {
+  display: none;
 }
 </style>
 </head>
@@ -91,7 +133,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <h3>✍️ 放入盲盒</h3>
 
 <select id="post_gender">
-<option value="">请选择你的性别</option>
+<option value="">请选择性别（不选则系统自动识别）</option>
 <option value="girl">👧 女生</option>
 <option value="boy">👦 男生</option>
 </select>
@@ -103,7 +145,7 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <option>树洞盲盒</option>
 </select>
 
-<input id="nick" placeholder="昵称">
+<input id="nick" placeholder="昵称（系统会自动识别性别）">
 <input id="age" placeholder="年龄">
 <input id="wx" placeholder="微信/QQ">
 <textarea id="intro" rows="5" placeholder="介绍一下自己~"></textarea>
@@ -120,7 +162,6 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <option value="girl">👧 我是女生，抽男生</option>
 <option value="boy">👦 我是男生，抽女生</option>
 </select>
-<!-- 盲盒数量显示 -->
 <div class="box-count" id="boxCountText">当前可抽取盲盒：0 个</div>
 </div>
 
@@ -162,12 +203,21 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 </div>
 </div>
 
-<!-- 音频 -->
+<!-- 支付弹窗 -->
+<div class="pay-modal hide" id="payModal">
+  <div class="pay-box">
+    <h3>💌 请扫码支付</h3>
+    <p class="pay-tip" id="payTip">支付 1 元</p >
+    < img src="pay.jpg" class="pay-img" alt="微信收款码">
+    <p class="pay-tip">💖 支付完成后点击下方按钮</p >
+    <button class="btn" onclick="confirmPay()">✅ 已支付，确认</button>
+  </div>
+</div>
+
 <audio id="bgMusic" loop>
 <audio id="clickSound">
 
 <script>
-// 声音资源（内置有效音源）
 const bgMusicUrl = "https://cdn.jsdelivr.net/gh/glows7/love-music/love1.mp3";
 const clickSoundUrl = "https://cdn.jsdelivr.net/gh/glows7/love-music/click.wav";
 
@@ -179,178 +229,214 @@ bgMusic.volume = 0.3;
 clickSound.volume = 0.7;
 
 let musicOn = true;
+let currentAction = '';
 
-// 播放点击音
 function playClick() {
   clickSound.currentTime = 0;
   clickSound.play().catch(()=>{});
 }
 
-// 音乐开关
 function toggleMusic() {
   playClick();
-  if (musicOn) {
-    bgMusic.pause();
-  } else {
-    bgMusic.play().catch(()=>{});
-  }
+  musicOn ? bgMusic.pause() : bgMusic.play().catch(()=>{});
   musicOn = !musicOn;
 }
 
-// 页面交互后自动播放背景音乐
-document.body.addEventListener('click', function initMusic() {
+document.body.addEventListener('click', () => {
   bgMusic.play().catch(()=>{});
-  document.body.removeEventListener('click', initMusic);
 }, { once: true });
 
-// 关闭协议
 function closeAgree() {
   playClick();
   document.getElementById('agreeModal').style.display = 'none';
 }
 
-// 切换面板
 function goPanel(id) {
   playClick();
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
   document.querySelectorAll('.nav .tab').forEach(t => t.classList.remove('active'));
   document.getElementById(id).classList.add('show');
-  event.target.classList.add('active');
+  event?.target.classList.add('active');
   if (id === 'store') loadMyStore();
   if (id === 'draw') updateBoxCount();
 }
 
-// 数据
 let boxList = JSON.parse(localStorage.getItem('boxList')) || [];
-let girlPostCount = localStorage.getItem('girlPostCount') || 0;
+let girlPostCount = parseInt(localStorage.getItem('girlPostCount') || 0);
 
-// 投稿
+// ==============================================
+// 昵称过滤 + 性别自动识别（核心新增）
+// ==============================================
+function checkNickAndGetGender(nick) {
+  if (!nick || nick.length < 2 || nick.length > 12) {
+    return { ok: false, msg: "昵称长度在2-12字之间" };
+  }
+
+  // 屏蔽恶搞/乱码/敏感
+  const bad = /[^\u4e00-\u9fa5a-zA-Z0-9]/g;
+  const clean = nick.replace(bad, '').trim();
+  if (clean.length < 2) {
+    return { ok: false, msg: "昵称不能是符号、乱码或恶搞" };
+  }
+
+  // 性别识别
+  const boyWords = /男|哥|先生|仔|帅|君|弟|浩|宇|杰/;
+  const girlWords = /女|妹|姐|宝|甜|雪|琳|欣|婷|朵|菲/;
+
+  if (boyWords.test(nick)) return { ok: true, gender: 'boy' };
+  if (girlWords.test(nick)) return { ok: true, gender: 'girl' };
+
+  return { ok: false, msg: "系统无法识别性别，请手动选择" };
+}
+
+// 投稿提交
 function submitPost() {
   playClick();
   let gender = document.getElementById("post_gender").value;
   let type = document.getElementById("post_type").value;
-  let nick = document.getElementById("nick").value;
-  let age = document.getElementById("age").value;
-  let wx = document.getElementById("wx").value;
-  let intro = document.getElementById("intro").value;
+  let nick = document.getElementById("nick").value.trim();
+  let age = document.getElementById("age").value.trim();
+  let wx = document.getElementById("wx").value.trim();
+  let intro = document.getElementById("intro").value.trim();
 
-  if (!gender) return alert('请选择性别');
-  if (!nick || !age || !wx || !intro) return alert('请填写完整信息');
+  if (!nick || !age || !wx || !intro) return alert("请填写完整信息");
+  if (isNaN(age) || age < 10 || age > 60) return alert("年龄格式不正确");
+
+  // 昵称校验 + 自动识别性别
+  if (!gender) {
+    const check = checkNickAndGetGender(nick);
+    if (!check.ok) return alert(check.msg);
+    gender = check.gender;
+  }
 
   let data = { gender, type, nick, age, wx, intro, time: Date.now() };
 
-  if (gender === 'girl' && girlPostCount == 0) {
+  // 女生首次免费
+  if (gender === 'girl' && girlPostCount === 0) {
     girlPostCount = 1;
     localStorage.setItem("girlPostCount", 1);
     saveBox(data);
-    alert('投稿成功！');
+    alert("投稿成功！");
     return;
   }
 
-  if (confirm('投稿需支付1元，确认提交？')) {
-    saveBox(data);
-    alert('投稿成功！');
-  }
+  // 支付
+  currentAction = 'post';
+  document.getElementById('payTip').innerText = '支付 1 元';
+  document.getElementById('payModal').classList.remove('hide');
 }
 
 function saveBox(data) {
   boxList.push(data);
   localStorage.setItem('boxList', JSON.stringify(boxList));
-  updateBoxCount(); // 投稿后更新盲盒数量
+  updateBoxCount();
 }
 
-// 更新盲盒数量显示
 function updateBoxCount() {
   let myGender = document.getElementById('draw_gender').value;
-  let targetGender = myGender === 'girl' ? 'boy' : 'girl';
-  let targetList = boxList.filter(item => item.gender === targetGender);
-  document.getElementById('boxCountText').innerText = `当前可抽取${targetGender=='boy'?'男生':'女生'}盲盒：${targetList.length} 个`;
+  let target = myGender === 'girl' ? 'boy' : 'girl';
+  let list = boxList.filter(o => o.gender === target);
+  document.getElementById('boxCountText').innerText =
+    `当前可抽取${target=='boy'?'男生':'女生'}盲盒：${list.length} 个`;
 }
 
-// ======================================
-// 👇 修复后的支付函数，使用 pay.jpg
-// ======================================
 function payThenDraw() {
   playClick();
-
-  if (confirm('支付2元即可抽取盲盒？')) {
-    let payWindow = window.open(
-      "https://raw.githubusercontent.com/zxcvbnm753951/my-first-project/main/pay.jpg",
-      "支付窗口",
-      "width=400,height=500,top=100,left=100"
-    );
-
-    setTimeout(() => {
-      if (confirm('已完成支付，确定开始抽奖？')) {
-        startDraw();
-        createHearts(24);
-        if (payWindow && !payWindow.closed) payWindow.close();
-      }
-    }, 1000);
+  let myGender = document.getElementById('draw_gender').value;
+  let target = myGender === 'girl' ? 'boy' : 'girl';
+  let list = boxList.filter(o => o.gender === target);
+  if (list.length === 0) {
+    document.getElementById('box_result').innerText = `暂无${target=='boy'?'男生':'女生'}盲盒`;
+    return;
   }
+  currentAction = 'draw';
+  document.getElementById('payTip').innerText = '支付 2 元';
+  document.getElementById('payModal').classList.remove('hide');
 }
 
-// 抽取逻辑
+function confirmPay() {
+  playClick();
+  document.getElementById('payModal').classList.add('hide');
+  if (currentAction === 'post') {
+    let gender = document.getElementById("post_gender").value;
+    let nick = document.getElementById("nick").value.trim();
+    if (!gender) {
+      const c = checkNickAndGetGender(nick);
+      if (!c.ok) return alert(c.msg);
+      gender = c.gender;
+    }
+    let data = {
+      gender,
+      type: document.getElementById("post_type").value,
+      nick: document.getElementById("nick").value.trim(),
+      age: document.getElementById("age").value.trim(),
+      wx: document.getElementById("wx").value.trim(),
+      intro: document.getElementById("intro").value.trim(),
+      time: Date.now()
+    };
+    saveBox(data);
+    if (gender === 'girl') {
+      girlPostCount += 1;
+      localStorage.setItem("girlPostCount", girlPostCount);
+    }
+    alert("投稿成功！");
+  }
+  if (currentAction === 'draw') {
+    startDraw();
+    createHearts(24);
+  }
+  currentAction = '';
+}
+
 function startDraw() {
   playClick();
   let myGender = document.getElementById('draw_gender').value;
-  let targetGender = myGender === 'girl' ? 'boy' : 'girl';
-  let targetList = boxList.filter(item => item.gender === targetGender);
-
-  if (targetList.length === 0) {
-    document.getElementById('box_result').innerText = `暂无${targetGender=='boy'?'男生':'女生'}盲盒`;
+  let target = myGender === 'girl' ? 'boy' : 'girl';
+  let list = boxList.filter(o => o.gender === target);
+  if (list.length === 0) {
+    document.getElementById('box_result').innerText = `暂无${target=='boy'?'男生':'女生'}盲盒`;
     return;
   }
-
-  let item = targetList[Math.floor(Math.random() * targetList.length)];
-  let txt = `
-【${item.type}】
+  let item = list[Math.floor(Math.random() * list.length)];
+  let txt = `【${item.type}】
 昵称：${item.nick}
 年龄：${item.age}
 介绍：${item.intro}
-联系方式：${item.wx}
-  `.trim();
-
+联系方式：${item.wx}`.trim();
   document.getElementById('box_result').innerText = txt;
-
   let mine = JSON.parse(localStorage.getItem('myBox')) || [];
   mine.push(item);
   localStorage.setItem('myBox', JSON.stringify(mine));
 }
 
-// 仓库
 function loadMyStore() {
   let mine = JSON.parse(localStorage.getItem('myBox')) || [];
   let html = '';
   mine.forEach(m => {
-    html += `
-<div class="box-item">
+    html += `<div class="box-item">
 【${m.type}】
 昵称：${m.nick}｜${m.age}岁
 介绍：${m.intro}
 微信：${m.wx}
 </div>`;
   });
-  document.getElementById('my_box_list').innerHTML = html || '<div style="text-align:center;padding:20px;color:#999">暂无盲盒</div>';
+  document.getElementById('my_box_list').innerHTML =
+    html || '<div style="text-align:center;padding:20px;color:#999">暂无盲盒</div>';
 }
 
-// 爱心飘落
 function createHearts(num) {
-  for (let i = 0; i < num; i++) {
+  for (let i=0; i<num; i++) {
     let h = document.createElement('div');
     h.innerText = '❤️';
     h.className = 'heart';
-    h.style.left = Math.random() * 100 + 'vw';
-    h.style.fontSize = Math.random() * 12 + 10 + 'px';
+    h.style.left = Math.random()*100+'vw';
+    h.style.fontSize = Math.random()*12+10+'px';
     document.body.appendChild(h);
-    setTimeout(() => h.remove(), 2200);
+    setTimeout(()=>h.remove(), 2200);
   }
 }
 
-// 页面加载时初始化盲盒数量
-window.onload = function() {
-  updateBoxCount();
-}
+window.onload = updateBoxCount;
 </script>
 </body>
 </html>
