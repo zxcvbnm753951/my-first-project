@@ -36,6 +36,14 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 .agreement-box h3{color:#ff3a66;margin-bottom:12px}
 .agreement-box p{line-height:1.7;margin-bottom:10px;color:#333}
 .agreement-box .btn{margin-top:16px}
+
+/* 盲盒数量提示样式 */
+.box-count {
+  font-size:14px;
+  color:#ff6699;
+  margin-bottom:10px;
+  text-align:center;
+}
 </style>
 </head>
 
@@ -108,10 +116,12 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
 <div id="draw" class="panel">
 <div class="card">
 <h3>🎯 选择你的性别</h3>
-<select id="draw_gender">
+<select id="draw_gender" onchange="updateBoxCount()">
 <option value="girl">👧 我是女生，抽男生</option>
 <option value="boy">👦 我是男生，抽女生</option>
 </select>
+<!-- 盲盒数量显示 -->
+<div class="box-count" id="boxCountText">当前可抽取盲盒：0 个</div>
 </div>
 
 <div class="card">
@@ -207,6 +217,7 @@ function goPanel(id) {
   document.getElementById(id).classList.add('show');
   event.target.classList.add('active');
   if (id === 'store') loadMyStore();
+  if (id === 'draw') updateBoxCount();
 }
 
 // 数据
@@ -245,16 +256,37 @@ function submitPost() {
 function saveBox(data) {
   boxList.push(data);
   localStorage.setItem('boxList', JSON.stringify(boxList));
+  updateBoxCount(); // 投稿后更新盲盒数量
 }
 
-// 支付抽盲盒
+// 更新盲盒数量显示
+function updateBoxCount() {
+  let myGender = document.getElementById('draw_gender').value;
+  let targetGender = myGender === 'girl' ? 'boy' : 'girl';
+  let targetList = boxList.filter(item => item.gender === targetGender);
+  document.getElementById('boxCountText').innerText = `当前可抽取${targetGender=='boy'?'男生':'女生'}盲盒：${targetList.length} 个`;
+}
+
+// ======================================
+// 👇 修复后的支付函数，使用 pay.jpg
+// ======================================
 function payThenDraw() {
   playClick();
-  if (confirm('支付2元抽取盲盒？')) {
+
+  if (confirm('支付2元即可抽取盲盒？')) {
+    let payWindow = window.open(
+      "https://raw.githubusercontent.com/zxcvbnm753951/my-first-project/main/pay.jpg",
+      "支付窗口",
+      "width=400,height=500,top=100,left=100"
+    );
+
     setTimeout(() => {
-      startDraw();
-      createHearts(24); // 付款成功后爱心飘落
-    }, 500);
+      if (confirm('已完成支付，确定开始抽奖？')) {
+        startDraw();
+        createHearts(24);
+        if (payWindow && !payWindow.closed) payWindow.close();
+      }
+    }, 1000);
   }
 }
 
@@ -313,6 +345,11 @@ function createHearts(num) {
     document.body.appendChild(h);
     setTimeout(() => h.remove(), 2200);
   }
+}
+
+// 页面加载时初始化盲盒数量
+window.onload = function() {
+  updateBoxCount();
 }
 </script>
 </body>
