@@ -1,279 +1,318 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>心动盲盒</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: "微软雅黑";
-            background: linear-gradient(135deg, #ff9aaf, #ffc3d8, #ffd6e7);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .container {
-            background: #fff;
-            padding: 40px 30px;
-            border-radius: 24px;
-            box-shadow: 0 15px 40px rgba(255, 90, 140, 0.3);
-            max-width: 450px;
-            width: 100%;
-            text-align: center;
-        }
-        .title {
-            font-size: 36px;
-            color: #ff3a80;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-        .sub-title {
-            color: #ff6a9d;
-            font-size: 16px;
-            margin-bottom: 30px;
-        }
-        .rule-box {
-            background: #fff5f9;
-            padding: 20px;
-            border-radius: 16px;
-            text-align: left;
-            margin-bottom: 30px;
-            border: 1px solid #ffd6e7;
-        }
-        .rule-box p {
-            color: #ff3a80;
-            font-size: 15px;
-            margin: 8px 0;
-        }
-        .btn {
-            width: 100%;
-            padding: 18px;
-            margin: 10px 0;
-            background: linear-gradient(90deg, #ff3a80, #ff6a9d);
-            color: #fff;
-            border: none;
-            border-radius: 14px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-        .btn-luck {
-            background: linear-gradient(90deg, #ff2e7a, #ff5a8c);
-        }
-        .form {
-            display: none;
-            margin-top: 20px;
-            text-align: left;
-        }
-        input, select {
-            width: 100%;
-            padding: 14px;
-            margin: 8px 0;
-            border: 1px solid #ffd6e7;
-            border-radius: 12px;
-            background: #fff5f9;
-        }
-        .tip {
-            color: #ff3a80;
-            font-size: 13px;
-            display: none;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 20px;
-            background: #fff0f6;
-            border-radius: 16px;
-            color: #ff3a80;
-            font-weight: bold;
-            line-height: 1.8;
-            display: none;
-        }
-        .heart {
-            position: fixed;
-            pointer-events: none;
-            animation: fall 3s linear forwards;
-            z-index: 999;
-        }
-        @keyframes fall {
-            0% { transform: translateY(-10vh); opacity: 1; }
-            100% { transform: translateY(100vh); opacity: 0; }
-        }
-        .pay-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-        .pay-box {
-            background: #fff;
-            padding: 25px 30px;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            max-width: 360px;
-        }
-        .pay-title {
-            font-size: 20px;
-            color: #ff3a80;
-        }
-        .pay-price {
-            font-size: 28px;
-            color: #ff3a80;
-            font-weight: bold;
-        }
-        .pay-buttons {
-            display: flex;
-            gap: 10px;
-            margin-left: auto;
-        }
-        .pay-buttons .btn {
-            padding: 12px 16px;
-            font-size: 16px;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>恋爱盲盒</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:PingFang SC,Microsoft YaHei,sans-serif}
+body{background:#fff6f9;color:#333; font-size:15px}
+.header{background:linear-gradient(90deg,#ff7eb3,#ff6a95);color:white;text-align:center;padding:22px 0;font-size:26px;font-weight:700;border-radius:0 0 20px 20px}
+.nav{display:flex;gap:8px;padding:12px 15px;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,0.05);overflow-x:auto;border-radius:16px;margin:10px 15px}
+.nav .tab{padding:9px 14px;border-radius:16px;background:#fce4ec;color:#ff5c8d;font-weight:600;white-space:nowrap;cursor:pointer}
+.nav .tab.active{background:#ff6699;color:white}
+.container{max-width:700px;margin:0 auto;padding:10px 15px 40px 15px}
+.card{background:white;border-radius:20px;box-shadow:0 4px 12px rgba(0,0,0,0.04);padding:22px;margin-bottom:16px}
+.card h3{color:#ff5c8d;margin-bottom:16px;font-size:19px}
+.btn{width:100%;padding:16px;border:none;border-radius:16px;background:linear-gradient(90deg,#ff6699,#ff85a2);color:white;font-size:16px;font-weight:600;margin:10px 0;cursor:pointer}
+.btn:active{transform:scale(0.98)}
+.btn-green{background:linear-gradient(90deg,#42c85c,#54d36a)}
+
+input,textarea,select{width:100%;padding:14px;border:1px solid #f8d3e1;border-radius:14px;margin-bottom:10px;font-size:15px;background:#fdfafc}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#ff85a2}
+.rule{padding:12px;background:#fef5f8;border-radius:12px;margin-bottom:8px}
+.panel{display:none}
+.panel.show{display:block}
+.box-item{padding:14px;border-bottom:1px solid #f8e1eb}
+.box-item:last-child{border-bottom:none}
+
+.heart{position:fixed;pointer-events:none;z-index:9999;animation:fall 2s linear forwards}
+@keyframes fall{100%{transform:translateY(700px);opacity:0}}
+
+.music-toggle{position:fixed;top:20px;right:20px;width:44px;height:44px;background:white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,0.1);cursor:pointer}
+
+.agreement-modal{position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center}
+.agreement-box{background:#fff;width:90%;max-width:600px;border-radius:20px;padding:24px;max-height:80vh;overflow-y:auto}
+.agreement-box h3{color:#ff3a66;margin-bottom:12px}
+.agreement-box p{line-height:1.7;margin-bottom:10px;color:#333}
+.agreement-box .btn{margin-top:16px}
+</style>
 </head>
+
 <body>
 
+<div class="music-toggle" onclick="toggleMusic()">🎵</div>
+<div class="header">💌 恋爱盲盒</div>
+
+<div class="nav">
+<div class="tab active" onclick="goPanel('home')">首页</div>
+<div class="tab" onclick="goPanel('post')">我要投稿</div>
+<div class="tab" onclick="goPanel('draw')">抽取盲盒</div>
+<div class="tab" onclick="goPanel('store')">盲盒仓库</div>
+</div>
+
 <div class="container">
-    <div class="title">❤️ 心动盲盒 ❤️</div>
-    <div class="sub-title">船校 × 辽财 × 辽工大</div>
 
-    <div class="rule-box">
-        <p>🔹 女生投稿：免费</p >
-        <p>🔹 男生投稿：1 元</p >
-        <p>🔹 抽取盲盒：2 元</p >
-        <p>🔹 仅限三校同学参与</p >
-    </div>
-
-    <button class="btn" onclick="playClick();openForm('girl')">👧 女生投稿</button>
-    <button class="btn" onclick="playClick();openPay('boy')">👦 男生投稿</button>
-    <button class="btn btn-luck" onclick="playClick();openPay('luck')">🎁 抽取盲盒</button>
-
-    <div class="form" id="form">
-        <select id="gender">
-            <option value="">选择性别</option>
-            <option value="girl">女生</option>
-            <option value="boy">男生</option>
-        </select>
-        <select id="school">
-            <option value="">选择学校</option>
-            <option value="船校">船校</option>
-            <option value="辽财">辽财</option>
-            <option value="辽工大">辽工大</option>
-        </select>
-        <input id="grade" placeholder="年级">
-        <input id="name" placeholder="昵称">
-        <input id="hobby" placeholder="兴趣爱好">
-        <div class="tip" id="tip">请填写完整信息</div>
-        <button class="btn" onclick="playClick();submit()">提交</button>
-    </div>
-
-    <div class="result" id="result"></div>
+<!-- 首页 -->
+<div id="home" class="panel show">
+<div class="card">
+<h3>📦 盲盒类型</h3>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+<div class="tab">脱单盲盒</div>
+<div class="tab">交友盲盒</div>
+<div class="tab">心动盲盒</div>
+<div class="tab">树洞盲盒</div>
+</div>
 </div>
 
-<div class="pay-modal" id="payModal">
-    <div class="pay-box">
-        <div class="pay-title">支付</div>
-        <div class="pay-price" id="payPrice">¥0</div>
-        <div class="pay-buttons">
-            <button class="btn" onclick="playClick();payOk()">确认</button>
-            <button class="btn" onclick="playClick();closePay()">取消</button>
-        </div>
-    </div>
+<div class="card">
+<h3>💰 规则说明</h3>
+<div class="rule">👧 女生：首次投稿免费，后续 1 元</div>
+<div class="rule">👦 男生：投稿 1 元</div>
+<div class="rule">💞 互抽规则：女生抽男生，男生抽女生</div>
+<div class="rule">🎁 抽取盲盒统一 2 元 / 次</div>
 </div>
+
+<button class="btn" onclick="goPanel('post')">我要投稿</button>
+<button class="btn btn-green" onclick="goPanel('draw')">抽取盲盒</button>
+</div>
+
+<!-- 投稿 -->
+<div id="post" class="panel">
+<div class="card">
+<h3>✍️ 放入盲盒</h3>
+
+<select id="post_gender">
+<option value="">请选择你的性别</option>
+<option value="girl">👧 女生</option>
+<option value="boy">👦 男生</option>
+</select>
+
+<select id="post_type">
+<option>脱单盲盒</option>
+<option>交友盲盒</option>
+<option>心动盲盒</option>
+<option>树洞盲盒</option>
+</select>
+
+<input id="nick" placeholder="昵称">
+<input id="age" placeholder="年龄">
+<input id="wx" placeholder="微信/QQ">
+<textarea id="intro" rows="5" placeholder="介绍一下自己~"></textarea>
+
+<button class="btn" onclick="submitPost()">提交投稿</button>
+</div>
+</div>
+
+<!-- 抽盲盒 -->
+<div id="draw" class="panel">
+<div class="card">
+<h3>🎯 选择你的性别</h3>
+<select id="draw_gender">
+<option value="girl">👧 我是女生，抽男生</option>
+<option value="boy">👦 我是男生，抽女生</option>
+</select>
+</div>
+
+<div class="card">
+<h3>🎁 抽取缘分</h3>
+<div id="box_result" style="min-height:140px;text-align:center;padding:30px 0;color:#333;font-size:16px;line-height:1.7;white-space:pre-line">
+请先选择性别再抽取
+</div>
+<button class="btn btn-green" onclick="payThenDraw()">💸 支付 2 元 抽盲盒</button>
+</div>
+
+<div class="card">
+<h3>📜 抽到的记录</h3>
+<div id="history_box"></div>
+</div>
+</div>
+
+<!-- 盲盒仓库 -->
+<div id="store" class="panel">
+<div class="card">
+<h3>💖 我的盲盒仓库</h3>
+<div id="my_box_list" style="max-height:400px;overflow-y:auto"></div>
+</div>
+</div>
+
+</div>
+
+<!-- 用户协议 -->
+<div class="agreement-modal" id="agreeModal">
+<div class="agreement-box">
+<h3>⚠️ 须知与免责声明</h3>
+<p>1. 存放纸条请保持真诚、真实，不得发布虚假、违规、违法信息。</p >
+<p>2. 所有纸条均来自网友，位置仅为随机选择，不代表对应地区本人。</p >
+<p>3. 如有违规内容，均由发布者自行承担法律责任，平台不保证内容真实性。</p >
+<p>4. 聊天交友时请仔细甄别，切勿轻易转账、发红包，谨防骗钱骗色，提高自我保护意识。</p >
+<p>5. 因私下交往产生的财产、人身纠纷，本平台不承担任何法律责任。</p >
+<p>6. 关闭本弹窗即代表您已阅读并同意《隐私协议》与《用户协议》。</p >
+<button class="btn" onclick="closeAgree()">我已阅读并同意</button>
+</div>
+</div>
+
+<!-- 音频 -->
+<audio id="bgMusic" loop>
+<audio id="clickSound">
 
 <script>
-// ============= 背景音乐 =============
-const bgAudio = new Audio("https://objects.akamaized.net/media/preview/706/706306_1174551-lq.mp3");
-bgAudio.loop = true;
-bgAudio.volume = 0.3;
+// 声音资源（内置有效音源）
+const bgMusicUrl = "https://cdn.jsdelivr.net/gh/glows7/love-music/love1.mp3";
+const clickSoundUrl = "https://cdn.jsdelivr.net/gh/glows7/love-music/click.wav";
 
-// 点击页面就播放（必响）
-document.addEventListener("click", () => {
-    bgAudio.play().catch(e => {});
-});
+const bgMusic = document.getElementById('bgMusic');
+const clickSound = document.getElementById('clickSound');
+bgMusic.src = bgMusicUrl;
+clickSound.src = clickSoundUrl;
+bgMusic.volume = 0.3;
+clickSound.volume = 0.7;
 
-// ============= 点击音效 =============
-function playClick(){
-    let a = new Audio("data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YnoGAACBhYqFbF1fdKI2NymAQocXaE2WlJwfZ5yJnJqa");
-    a.volume=0.7;
-    a.play().catch(()=>{});
+let musicOn = true;
+
+// 播放点击音
+function playClick() {
+  clickSound.currentTime = 0;
+  clickSound.play().catch(()=>{});
 }
 
-// ============= 心动音效 =============
-function playHeart(){
-    let a = new Audio("data:audio/wav;base64,UklGRl9vT19XQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YU9vT19AAAAA//7//P/+//z/8P7/8P7/");
-    a.volume=0.8;
-    a.play().catch(()=>{});
+// 音乐开关
+function toggleMusic() {
+  playClick();
+  if (musicOn) {
+    bgMusic.pause();
+  } else {
+    bgMusic.play().catch(()=>{});
+  }
+  musicOn = !musicOn;
 }
 
-let currentType="";
-let payTarget="";
+// 页面交互后自动播放背景音乐
+document.body.addEventListener('click', function initMusic() {
+  bgMusic.play().catch(()=>{});
+  document.body.removeEventListener('click', initMusic);
+}, { once: true });
 
-function openForm(t){
-    currentType=t;
-    form.style.display="block";
-    result.style.display="none";
+// 关闭协议
+function closeAgree() {
+  playClick();
+  document.getElementById('agreeModal').style.display = 'none';
 }
 
-function openPay(t){
-    payTarget=t;
-    payPrice.innerText = t=="boy"?"¥1":"¥2";
-    payModal.style.display="flex";
+// 切换面板
+function goPanel(id) {
+  playClick();
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('show'));
+  document.querySelectorAll('.nav .tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('show');
+  event.target.classList.add('active');
+  if (id === 'store') loadMyStore();
 }
 
-function closePay(){
-    payModal.style.display="none";
+// 数据
+let boxList = JSON.parse(localStorage.getItem('boxList')) || [];
+let girlPostCount = localStorage.getItem('girlPostCount') || 0;
+
+// 投稿
+function submitPost() {
+  playClick();
+  let gender = document.getElementById("post_gender").value;
+  let type = document.getElementById("post_type").value;
+  let nick = document.getElementById("nick").value;
+  let age = document.getElementById("age").value;
+  let wx = document.getElementById("wx").value;
+  let intro = document.getElementById("intro").value;
+
+  if (!gender) return alert('请选择性别');
+  if (!nick || !age || !wx || !intro) return alert('请填写完整信息');
+
+  let data = { gender, type, nick, age, wx, intro, time: Date.now() };
+
+  if (gender === 'girl' && girlPostCount == 0) {
+    girlPostCount = 1;
+    localStorage.setItem("girlPostCount", 1);
+    saveBox(data);
+    alert('投稿成功！');
+    return;
+  }
+
+  if (confirm('投稿需支付1元，确认提交？')) {
+    saveBox(data);
+    alert('投稿成功！');
+  }
 }
 
-function payOk(){
-    closePay();
-    payTarget=="boy"?openForm("boy"):openLuck();
+function saveBox(data) {
+  boxList.push(data);
+  localStorage.setItem('boxList', JSON.stringify(boxList));
 }
 
-function submit(){
-    const g=gender.value, s=school.value, gr=grade.value, n=name.value, h=hobby.value;
-    if(!g||!s||!gr||!n||!h){tip.style.display="block";return;}
-    let list=JSON.parse(localStorage.getItem("users"))||[];
-    list.push({g,s,gr,n,h});
-    localStorage.setItem("users",JSON.stringify(list));
-    result.innerText=`✅ 投稿成功！\n学校：${s}\n昵称：${n}`;
-    result.style.display="block";
-    form.style.display="none";
+// 支付抽盲盒
+function payThenDraw() {
+  playClick();
+  if (confirm('支付2元抽取盲盒？')) {
+    setTimeout(() => {
+      startDraw();
+      createHearts(24); // 付款成功后爱心飘落
+    }, 500);
+  }
 }
 
-function openLuck(){
-    playHeart();
-    let list=JSON.parse(localStorage.getItem("users"))||[];
-    if(list.length<2){alert("目前参与人数较少");return;}
-    let user=list[Math.floor(Math.random()*list.length)];
-    result.innerText=`🎊 匹配成功！\n对象：${user.n}\n学校：${user.s}\n爱好：${user.h}`;
-    result.style.display="block";
-    dropHearts(40);
+// 抽取逻辑
+function startDraw() {
+  playClick();
+  let myGender = document.getElementById('draw_gender').value;
+  let targetGender = myGender === 'girl' ? 'boy' : 'girl';
+  let targetList = boxList.filter(item => item.gender === targetGender);
+
+  if (targetList.length === 0) {
+    document.getElementById('box_result').innerText = `暂无${targetGender=='boy'?'男生':'女生'}盲盒`;
+    return;
+  }
+
+  let item = targetList[Math.floor(Math.random() * targetList.length)];
+  let txt = `
+【${item.type}】
+昵称：${item.nick}
+年龄：${item.age}
+介绍：${item.intro}
+联系方式：${item.wx}
+  `.trim();
+
+  document.getElementById('box_result').innerText = txt;
+
+  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
+  mine.push(item);
+  localStorage.setItem('myBox', JSON.stringify(mine));
 }
 
-function dropHearts(c){
-    for(let i=0;i<c;i++){
-        let h=document.createElement("div");
-        h.className="heart";
-        h.innerText=["❤️","💖","💗","💓","💕"][Math.floor(Math.random()*5)];
-        h.style.left=Math.random()*100+"vw";
-        h.style.fontSize=18+Math.random()*22+"px";
-        document.body.appendChild(h);
-        setTimeout(()=>h.remove(),4000);
-    }
+// 仓库
+function loadMyStore() {
+  let mine = JSON.parse(localStorage.getItem('myBox')) || [];
+  let html = '';
+  mine.forEach(m => {
+    html += `
+<div class="box-item">
+【${m.type}】
+昵称：${m.nick}｜${m.age}岁
+介绍：${m.intro}
+微信：${m.wx}
+</div>`;
+  });
+  document.getElementById('my_box_list').innerHTML = html || '<div style="text-align:center;padding:20px;color:#999">暂无盲盒</div>';
+}
+
+// 爱心飘落
+function createHearts(num) {
+  for (let i = 0; i < num; i++) {
+    let h = document.createElement('div');
+    h.innerText = '❤️';
+    h.className = 'heart';
+    h.style.left = Math.random() * 100 + 'vw';
+    h.style.fontSize = Math.random() * 12 + 10 + 'px';
+    document.body.appendChild(h);
+    setTimeout(() => h.remove(), 2200);
+  }
 }
 </script>
 </body>
